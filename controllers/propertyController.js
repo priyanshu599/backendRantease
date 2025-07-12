@@ -1,6 +1,6 @@
 const Property = require('../models/property');
 
-// Create a new property
+// Create a new property (with optional image)
 exports.createProperty = async (req, res) => {
   try {
     if (req.user.role !== 'landlord') {
@@ -13,11 +13,14 @@ exports.createProperty = async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    const image = req.file ? req.file.filename : null;
+
     const property = await Property.create({
       title,
       description,
       price,
       location,
+      image,
       createdBy: req.user._id || req.user.id
     });
 

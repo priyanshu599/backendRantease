@@ -5,11 +5,17 @@ const propertySchema = new mongoose.Schema({
   description: String,
   price: Number,
   location: String,
-  createdBy: {
+  image: {
+  type: String, // will store image file path or URL
+  default: ''
+},
+createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   }
+  
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Property', propertySchema);

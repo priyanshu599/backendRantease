@@ -9,15 +9,21 @@ const {
 } = require('../controllers/propertyController');
 
 const authMiddleware = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 const Property = require('../models/property');
 
-// ✅ Create a new property (Only for landlords)
-router.post('/', authMiddleware, createProperty);
+// ✅ Create property with image upload (Only for landlords)
+router.post(
+  '/',
+  authMiddleware,
+  upload.single('image'), // must match the key used in Postman
+  createProperty
+);
 
-// ✅ Get all properties (Admin, Tenant, Landlord can view all)
+// ✅ Get all properties (Admin, Tenant, Landlord)
 router.get('/', authMiddleware, getAllProperties);
 
-// ✅ Get properties created by logged-in landlord only
+// ✅ Get properties created by the logged-in landlord
 router.get('/my', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'landlord') {
@@ -34,10 +40,10 @@ router.get('/my', authMiddleware, async (req, res) => {
 // ✅ Get property by ID
 router.get('/:id', authMiddleware, getPropertyById);
 
-// ✅ Update property by ID (optionally restrict to landlords if needed)
+// ✅ Update property by ID
 router.put('/:id', authMiddleware, updateProperty);
 
-// ✅ Delete property by ID (optionally restrict to landlords if needed)
+// ✅ Delete property by ID
 router.delete('/:id', authMiddleware, deleteProperty);
 
 module.exports = router;
