@@ -7,21 +7,24 @@ exports.createProperty = async (req, res) => {
       return res.status(403).json({ message: 'Only landlords can create properties' });
     }
 
-    const { title, description, price, location } = req.body;
+    const { title, description, price, address, latitude, longitude } = req.body;
+    const image = req.file ? req.file.filename : null;
 
-    if (!title || !price || !location) {
+    if (!title || !price || !address || !latitude || !longitude) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-
-    const image = req.file ? req.file.filename : null;
 
     const property = await Property.create({
       title,
       description,
       price,
-      location,
+      address,
       image,
-      createdBy: req.user._id || req.user.id
+      createdBy: req.user._id || req.user.id,
+      location: {
+        type: 'Point',
+        coordinates: [parseFloat(longitude), parseFloat(latitude)]
+      }
     });
 
     res.status(201).json(property);
@@ -29,6 +32,7 @@ exports.createProperty = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 // Get all properties
 exports.getAllProperties = async (req, res) => {
@@ -83,3 +87,30 @@ exports.deleteProperty = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// 🔍 Get nearby properties
+exports.getNearbyProperties = async (req, res) => {
+  try {
+    const { lat, lng, radius = 5 } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: 'Latitude and longitude are required' });
+    }
+
+    const properties = await Property.find({
+      location: {
+        $geoWithin: {
+          $centerSphere: [
+            [parseFloat(lng), parseFloat(lat)],
+            radius / 6378.1 // radius in radians
+          ]
+        }
+      }
+    });
+
+    res.status(200).json(properties);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+

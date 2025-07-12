@@ -46,4 +46,8 @@ router.put('/:id', authMiddleware, updateProperty);
 // ✅ Delete property by ID
 router.delete('/:id', authMiddleware, deleteProperty);
 
+// 🔍 Get nearby properties by location (lat, lng, radius in km)
+router.get('/nearby', authMiddleware, getNearbyProperties);
+
+
 module.exports = router;
