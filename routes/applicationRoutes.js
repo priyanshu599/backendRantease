@@ -5,25 +5,42 @@ const Property = require('../models/property');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Tenant applies to a property
+// In your backend's routes/applicationRoutes.js file
+
 router.post('/:propertyId/apply', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'tenant') {
       return res.status(403).json({ message: 'Only tenants can apply' });
     }
-
     const { propertyId } = req.params;
     const { message } = req.body;
 
-    const existing = await Application.findOne({ property: propertyId, tenant: req.user.id });
-    if (existing) return res.status(400).json({ message: 'Already applied to this property' });
+    const existingApplication = await Application.findOne({ property: propertyId, tenant: req.user.id });
 
+    if (existingApplication) {
+      // If application is pending or approved, they can't apply again.
+      if (existingApplication.status === 'pending' || existingApplication.status === 'approved') {
+        return res.status(400).json({ message: 'You already have an active application for this property' });
+      }
+
+      // If it's rejected, allow re-application by updating the existing one.
+      if (existingApplication.status === 'rejected') {
+        existingApplication.status = 'pending';
+        existingApplication.message = message;
+        existingApplication.createdAt = new Date(); // Update timestamp
+        await existingApplication.save();
+        return res.status(200).json({ message: 'Your application has been re-submitted successfully.', application: existingApplication });
+      }
+    }
+
+    // If no application exists, create a new one.
     const application = await Application.create({
       property: propertyId,
       tenant: req.user.id,
       message
     });
+    res.status(201).json({ message: 'Application submitted successfully!', application });
 
-    res.status(201).json(application);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -98,7 +115,7 @@ router.get('/my-applications', authMiddleware, async (req, res) => {
     }
 
     const applications = await Application.find({ tenant: req.user.id })
-      .populate('property', 'title address')  // Optional: adjust based on your schema
+      .populate('property', 'title address price')  // Optional: adjust based on your schema
 
     res.status(200).json(applications);
   } catch (err) {
@@ -124,6 +141,24 @@ router.get('/my-applications/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
+});
+// new route for when a application got rejected 
+router.get('/status/:propertyId', authMiddleware, async (req, res) => {
+    try {
+        const application = await Application.findOne({
+            property: req.params.propertyId,
+            tenant: req.user.id
+        });
+
+        if (!application) {
+            return res.status(404).json({ message: 'No application found' });
+        }
+
+        res.status(200).json({ status: application.status });
+
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
 });
 
 module.exports = router;

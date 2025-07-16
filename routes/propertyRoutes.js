@@ -11,6 +11,7 @@ const {
 const authMiddleware = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const Property = require('../models/property');
+const { getNearbyProperties, ...otherControllers } = require('../controllers/propertyController');
 
 // ✅ Create property with image upload (Only for landlords)
 router.post(
@@ -21,7 +22,7 @@ router.post(
 );
 
 // ✅ Get all properties (Admin, Tenant, Landlord)
-router.get('/', authMiddleware, getAllProperties);
+router.get('/', getAllProperties);
 
 // ✅ Get properties created by the logged-in landlord
 router.get('/my', authMiddleware, async (req, res) => {
@@ -38,7 +39,7 @@ router.get('/my', authMiddleware, async (req, res) => {
 });
 
 // ✅ Get property by ID
-router.get('/:id', authMiddleware, getPropertyById);
+router.get('/:id', getPropertyById);
 
 // ✅ Update property by ID
 router.put('/:id', authMiddleware, updateProperty);
@@ -48,6 +49,7 @@ router.delete('/:id', authMiddleware, deleteProperty);
 
 // 🔍 Get nearby properties by location (lat, lng, radius in km)
 router.get('/nearby', authMiddleware, getNearbyProperties);
+
 
 
 module.exports = router;

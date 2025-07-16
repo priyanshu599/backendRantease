@@ -1,39 +1,39 @@
 const Message = require('../models/Message');
-const User = require('../models/User');
 
 exports.sendMessage = async (req, res) => {
-  const { receiver, content, property } = req.body;
-
-  if (!receiver || !content || !property) {
-    return res.status(400).json({ message: 'Missing required fields' });
-  }
-
   try {
+    const { receiverId, content, propertyId } = req.body;
+
+    if (!receiverId || !content) {
+      return res.status(400).json({ message: 'Missing fields' });
+    }
+
     const message = await Message.create({
       sender: req.user.id,
-      receiver,
+      receiver: receiverId,
       content,
-      property
+      property: propertyId || null
     });
 
-    res.status(201).json({ message: 'Message sent', data: message });
+    res.status(201).json({ message: 'Sent', data: message });
   } catch (err) {
-    res.status(500).json({ message: 'Error sending message', error: err.message });
+    res.status(500).json({ message: 'Send failed', error: err.message });
   }
 };
 
-exports.getConversations = async (req, res) => {
+// In messageController.js
+exports.getMessages = async (req, res) => {
   try {
     const messages = await Message.find({
       $or: [{ sender: req.user.id }, { receiver: req.user.id }]
     })
-      .sort({ createdAt: -1 })
-      .populate('sender', 'name email role')
-      .populate('receiver', 'name email role')
-      .populate('property', 'title location');
+    .populate('sender', 'name email') // <-- Add this line
+    .populate('receiver', 'name email') // <-- Add this line
+    .populate('property', 'title') // <-- Add this line
+    .sort({ timestamp: -1 });
 
     res.status(200).json(messages);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching messages', error: err.message });
+    res.status(500).json({ message: 'Fetch failed', error: err.message });
   }
 };

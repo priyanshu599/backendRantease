@@ -89,25 +89,58 @@ exports.deleteProperty = async (req, res) => {
 };
 
 // 🔍 Get nearby properties
+// controllers/propertyController.js
+
 exports.getNearbyProperties = async (req, res) => {
   try {
-    const { lat, lng, radius = 5 } = req.query;
+    const { lat, lng, distance = 5000 } = req.query;
 
     if (!lat || !lng) {
-      return res.status(400).json({ message: 'Latitude and longitude are required' });
+      return res.status(400).json({ message: 'Missing coordinates' });
     }
 
     const properties = await Property.find({
       location: {
-        $geoWithin: {
-          $centerSphere: [
-            [parseFloat(lng), parseFloat(lat)],
-            radius / 6378.1 // radius in radians
-          ]
+        $near: {
+          $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
+          $maxDistance: parseFloat(distance)
         }
       }
     });
 
+    res.json(properties);
+  } catch (err) {
+    res.status(500).json({ message: 'Geo search failed', error: err.message });
+  }
+};
+
+// controllers/propertyController.js
+
+exports.getAllProperties = async (req, res) => {
+  try {
+    const { minPrice, maxPrice, bedrooms, location, type } = req.query;
+
+    const filter = {};
+
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    if (bedrooms) {
+      filter.bedrooms = Number(bedrooms);
+    }
+
+    if (type) {
+      filter.type = type; // e.g. "Apartment", "Flat", etc.
+    }
+
+    if (location) {
+      filter.location = { $regex: location, $options: 'i' }; // partial match
+    }
+
+    const properties = await Property.find(filter);
     res.status(200).json(properties);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

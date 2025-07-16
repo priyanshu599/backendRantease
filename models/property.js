@@ -2,27 +2,39 @@ const mongoose = require('mongoose');
 
 const propertySchema = new mongoose.Schema({
   title: { type: String, required: true },
-  description: String,
+  description: { type: String },
   price: { type: Number, required: true },
-  address: String,
+  address: { type: String },
 
+  // GeoJSON Location field for geospatial queries
   location: {
     type: {
       type: String,
       enum: ['Point'],
-      default: 'Point'
+      default: 'Point',
+      required: true
     },
     coordinates: {
-      type: [Number], // [longitude, latitude]
+      type: [Number], // Format: [longitude, latitude]
       required: true
     }
   },
 
-  image: String,
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+  image: { type: String },
+
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-// Add geospatial index
+// Geospatial Index for location field
 propertySchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Property', propertySchema);
