@@ -28,6 +28,11 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'confirmed', 'cancelled'],
     default: 'pending'
+  },
+  // Add this new field
+  isPaid: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

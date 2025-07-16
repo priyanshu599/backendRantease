@@ -1,8 +1,9 @@
+// routes/paymentRoutes.js
 const router = require('express').Router();
-const { createFakePayment, getAllPayments } = require('../controllers/paymentController');
+const { createRazorpayOrder, verifyPayment } = require('../controllers/paymentController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-router.post('/', authMiddleware, createFakePayment);
-router.get('/', authMiddleware, getAllPayments);
+router.post('/order', authMiddleware, createRazorpayOrder);
+router.post('/verify', authMiddleware, verifyPayment);
 
 module.exports = router;
