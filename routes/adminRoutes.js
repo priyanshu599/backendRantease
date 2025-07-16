@@ -18,7 +18,8 @@ router.delete('/users/:id', adminController.deleteUser);
 router.get('/properties', adminController.getAllProperties);
 router.delete('/properties/:id', adminController.deleteProperty);
 
-// Admin application routes
-router.get('/applications', adminController.getAllApplications);
+// --- New Analytics Route ---
+router.get('/analytics', adminController.getPlatformAnalytics);
+
 
 module.exports = router;

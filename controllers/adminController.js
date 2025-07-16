@@ -2,7 +2,7 @@
 
 const User = require('../models/User');
 const Property = require('../models/property');
-const Application = require('../models/application');
+const Booking = require('../models/booking');
 
 // Get all users
 exports.getAllUsers = async (req, res) => {
@@ -46,14 +46,38 @@ exports.deleteProperty = async (req, res) => {
   }
 };
 
-// Get all applications
-exports.getAllApplications = async (req, res) => {
+// --- New Analytics Function ---
+
+exports.getPlatformAnalytics = async (req, res) => {
   try {
-    const applications = await Application.find()
-      .populate('tenant', 'name email')
-      .populate('property', 'title location');
-    res.status(200).json(applications);
-  } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
+    const totalUsers = await User.countDocuments();
+    const totalProperties = await Property.countDocuments();
+    const totalBookings = await Booking.countDocuments();
+
+    // Calculate total revenue from confirmed and paid bookings
+    const paidBookings = await Booking.find({ status: 'confirmed', isPaid: true });
+    const totalRevenue = paidBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+
+    // Data for a simple chart (e.g., user signups in the last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const userSignups = await User.aggregate([
+        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+        { $group: { 
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            count: { $sum: 1 }
+        }},
+        { $sort: { _id: 1 } }
+    ]);
+
+    res.status(200).json({
+      totalUsers,
+      totalProperties,
+      totalBookings,
+      totalRevenue,
+      userSignups,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
